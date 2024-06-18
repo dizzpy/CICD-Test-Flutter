@@ -1,4 +1,4 @@
-name: iOS-ipa-build
+name: Build-and-Release
 
 on:
   workflow_dispatch:
@@ -14,8 +14,8 @@ jobs:
         with:
           channel: 'stable'
           architecture: x64
+
       - run: flutter pub get
-      
 
       - run: pod repo update
         working-directory: ios
@@ -32,11 +32,43 @@ jobs:
         run: zip -qq -r -9 FlutterIpaExport.ipa Payload
         working-directory: build/ios/iphoneos
 
-      - name: Upload binaries to release
+      - name: Upload iOS binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: build/ios/iphoneos/FlutterIpaExport.ipa
-          tag: v1.0
+          tag: v2.0
           overwrite: true
-          body: "This is first release"
+          body: "This is the second release for iOS"
+
+  build-android:
+    name: Android Build 🎉
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      - name: Upload Android binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/app/outputs/flutter-apk/app-release.apk
+          tag: v2.0
+          overwrite: true
+          body: "This is the second release for Android"
+
+  notify:
+    name: 📢 Notify
+    needs: [build-ios, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification
+        run: echo "Build and release completed for both iOS and Android."
